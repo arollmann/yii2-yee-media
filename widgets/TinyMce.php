@@ -65,6 +65,40 @@ class TinyMce extends InputWidget
         if (empty($this->clientOptions['convert_urls'])) {
             $this->clientOptions['convert_urls'] = false;
         }
+		
+		// Automatic translation of TinyMCE editor
+		
+		if (empty($this->clientOptions['language'])) {
+            
+			// From fr-FR (IETF language tag, defined in Yii config),
+			// we move to fr_FR (TinyMCE language files format)
+			$currentLanguageCode = str_replace('-', '_', \Yii::$app->language);
+			
+			if ($currentLanguageCode != 'en_US') {
+				$tinyLangFiles = array_diff(scandir(\Yii::getAlias('@vendor/pendalf89/yii2-tinymce/langs')), ['..', '.']);
+				
+				foreach ($tinyLangFiles as $fileName) {
+					if ($currentLanguageCode == $fileName) {
+						// A lang file exists named as that language code
+						$this->clientOptions['language'] = $currentLanguageCode;
+						break;
+					}	
+				}
+				
+				if (empty($this->clientOptions['language'])) {
+					// The language code may be of the form 'fr_FR'
+					$arr = explode('_', $currentLanguageCode);
+					$shortLanguageCode = $arr[0];
+					
+					foreach ($tinyLangFiles as $fileName) {
+						if (strpos($fileName, $shortLanguageCode) !== FALSE) {
+							$this->clientOptions['language'] = substr($fileName, 0, strlen($fileName) - 3);
+							break;
+						}
+					}
+				}
+			}
+        }
 
         $this->tinyMCE = TinyMceWidget::widget([
             'name' => $this->name,
